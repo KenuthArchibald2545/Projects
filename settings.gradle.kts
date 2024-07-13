@@ -20,4 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "KenuthLab9"
-include(":app")
+include(":KenuthLab9")
