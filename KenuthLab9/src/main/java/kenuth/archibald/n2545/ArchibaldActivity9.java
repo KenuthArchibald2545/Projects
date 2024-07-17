@@ -1,10 +1,18 @@
 package kenuth.archibald.n2545;
 
+import android.app.AlertDialog;
+import android.app.SearchManager;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -73,11 +81,51 @@ public class ArchibaldActivity9 extends AppCompatActivity {
                 || super.onSupportNavigateUp();
     }
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_toggle) {
+        if (item.getItemId() == R.id.action_search) {
+            showSearchDialog();
+            return true;
+        } else if (item.getItemId() == R.id.action_toggle) {
             toggleTheme();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showSearchDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Search");
+
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        builder.setPositiveButton("Search", (dialog, which) -> {
+            String searchPhrase = input.getText().toString().trim();
+            if (!searchPhrase.isEmpty()) {
+                launchGoogleSearch(searchPhrase);
+            }
+        });
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // Show the keyboard
+        input.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT);
+    }
+
+    private void launchGoogleSearch(String searchPhrase) {
+        Intent intent = new Intent(Intent.ACTION_WEB_SEARCH);
+        intent.putExtra(SearchManager.QUERY, searchPhrase);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        } else {
+            // Fallback to web browser if no app can handle the web search intent
+            Intent webSearchIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(searchPhrase)));
+            startActivity(webSearchIntent);
+        }
     }
 
     private void toggleTheme() {
