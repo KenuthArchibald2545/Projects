@@ -1,16 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--Tevadi Brookes N01582563-->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_search"
-        android:orderInCategory="2"
-        android:title="Arc"
-        android:icon="@drawable/action_search_24"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/action_toggle"
-        android:orderInCategory="1"
-        android:title="Ken"
-        android:icon="@drawable/action_toggle_24"
-        app:showAsAction="never"/>
+        android:id="@+id/action_options"
+        android:title="@string/options"
+        app:showAsAction="always">
+        <menu>
+            <item
+                android:id="@+id/action_search"
+                android:orderInCategory="2"
+                android:title="@string/arc"
+                android:icon="@drawable/baseline_search_24"
+                app:showAsAction="never" />
+            <item
+                android:id="@+id/action_toggle"
+                android:orderInCategory="1"
+                android:title="@string/ken"
+                android:icon="@drawable/baseline_legend_toggle_24"
+                app:showAsAction="never"/>
+        </menu>
+    </item>
 </menu>
