@@ -7,12 +7,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -29,6 +32,8 @@ public class Archi1baldFragment extends Fragment {
 
     private ToggleButton fileType;
     private EditText fileName, fileContents;
+    private TextView fileListTextView;
+    private List<String> fileNames;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -69,6 +74,47 @@ public class Archi1baldFragment extends Fragment {
         });
 
         return root;
+    }
+
+    private void onCreateFile(View view) {
+        if (TextUtils.isEmpty(fileName.getText().toString())) {
+            showSnackbar("Kenuth Archibald - File name missing");
+            return;
+        }
+        createFile(requireContext(), fileType.isChecked());
+    }
+
+    private void onDeleteFile(View view) {
+        if (TextUtils.isEmpty(fileName.getText().toString())) {
+            showSnackbar("Kenuth Archibald - File name missing");
+            return;
+        }
+        deleteFile(requireContext(), fileType.isChecked());
+    }
+
+    private void onWriteFile(View view) {
+        if (TextUtils.isEmpty(fileName.getText().toString())) {
+            showSnackbar("Kenuth Archibald - File name missing");
+            return;
+        }
+        if (TextUtils.isEmpty(fileContents.getText().toString())) {
+            Toast.makeText(requireContext(), "Kenuth Archibald - Content Missing", Toast.LENGTH_LONG).show();
+            return;
+        }
+        writeFile(requireContext(), fileType.isChecked());
+        fileContents.setText("");
+    }
+
+    private void onReadFile(View view) {
+        if (TextUtils.isEmpty(fileName.getText().toString())) {
+            showSnackbar("Kenuth Archibald - File name missing");
+            return;
+        }
+        readFile(requireContext(), fileType.isChecked());
+    }
+
+    private void showSnackbar(String message) {
+        Snackbar.make(requireView(), message, Snackbar.LENGTH_INDEFINITE).show();
     }
 
     private void createFile(Context context, boolean isPersistent) {
@@ -150,4 +196,22 @@ public class Archi1baldFragment extends Fragment {
             Toast.makeText(context, String.format("File %s doesn't exist", fileName.getText().toString()), Toast.LENGTH_SHORT).show();
         }
     }
+
+    private void limitFileCount(Context context, boolean isPersistent) {
+        if (fileNames.size() > 3) {
+            String oldestFileName = fileNames.remove(0);
+            File file = new File(isPersistent ? context.getFilesDir() : context.getCacheDir(), oldestFileName);
+            if (file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
+    private void updateFileListDisplay() {
+        fileListTextView.setText("");
+        for (String name : fileNames) {
+            fileListTextView.append(name + "\n");
+        }
+    }
+
 }
