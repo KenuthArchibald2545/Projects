@@ -41,93 +41,60 @@ public class Archi1baldFragment extends Fragment {
 
         fileName = root.findViewById(R.id.activity_internalstorage_filename);
         fileContents = root.findViewById(R.id.activity_internalstorage_filecontents);
-
         fileType = root.findViewById(R.id.activity_internalstorage_filetype);
+        fileListTextView = root.findViewById(R.id.file_list_textview);
+        fileNames = new ArrayList<>();
+
         fileType.setChecked(true);
 
-        root.findViewById(R.id.activity_internalstorage_create).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                createFile(requireContext(), fileType.isChecked());
-            }
-        });
+        root.findViewById(R.id.activity_internalstorage_create).setOnClickListener(this::onFileActionClick);
+        root.findViewById(R.id.activity_internalstorage_delete).setOnClickListener(this::onFileActionClick);
+        root.findViewById(R.id.activity_internalstorage_write).setOnClickListener(this::onFileActionClick);
+        root.findViewById(R.id.activity_internalstorage_read).setOnClickListener(this::onFileActionClick);
 
-        root.findViewById(R.id.activity_internalstorage_delete).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                deleteFile(requireContext(), fileType.isChecked());
-            }
-        });
-
-        root.findViewById(R.id.activity_internalstorage_write).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                writeFile(requireContext(), fileType.isChecked());
-            }
-        });
-
-        root.findViewById(R.id.activity_internalstorage_read).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                readFile(requireContext(), fileType.isChecked());
-            }
-        });
+        loadFileNames();
 
         return root;
     }
 
-    private void onCreateFile(View view) {
+    private void onFileActionClick(View view) {
         if (TextUtils.isEmpty(fileName.getText().toString())) {
             showSnackbar("Kenuth Archibald - File name missing");
             return;
         }
-        createFile(requireContext(), fileType.isChecked());
+
+        boolean isPersistent = fileType.isChecked();
+
+        int id = view.getId();
+        if (id == R.id.activity_internalstorage_create) {
+            createFile(requireContext(), isPersistent);
+        } else if (id == R.id.activity_internalstorage_delete) {
+            deleteFile(requireContext(), isPersistent);
+        } else if (id == R.id.activity_internalstorage_write) {
+            if (TextUtils.isEmpty(fileContents.getText().toString())) {
+                Toast.makeText(requireContext(), "Kenuth Archibald - Content Missing", Toast.LENGTH_LONG).show();
+            } else {
+                writeFile(requireContext(), isPersistent);
+            }
+        } else if (id == R.id.activity_internalstorage_read) {
+            readFile(requireContext(), isPersistent);
+        }
     }
 
-    private void onDeleteFile(View view) {
-        if (TextUtils.isEmpty(fileName.getText().toString())) {
-            showSnackbar("Kenuth Archibald - File name missing");
-            return;
-        }
-        deleteFile(requireContext(), fileType.isChecked());
-    }
-
-    private void onWriteFile(View view) {
-        if (TextUtils.isEmpty(fileName.getText().toString())) {
-            showSnackbar("Kenuth Archibald - File name missing");
-            return;
-        }
-        if (TextUtils.isEmpty(fileContents.getText().toString())) {
-            Toast.makeText(requireContext(), "Kenuth Archibald - Content Missing", Toast.LENGTH_LONG).show();
-            return;
-        }
-        writeFile(requireContext(), fileType.isChecked());
-        fileContents.setText("");
-    }
-
-    private void onReadFile(View view) {
-        if (TextUtils.isEmpty(fileName.getText().toString())) {
-            showSnackbar("Kenuth Archibald - File name missing");
-            return;
-        }
-        readFile(requireContext(), fileType.isChecked());
-    }
 
     private void showSnackbar(String message) {
         Snackbar.make(requireView(), message, Snackbar.LENGTH_INDEFINITE).show();
     }
 
     private void createFile(Context context, boolean isPersistent) {
-        File file;
-        if (isPersistent) {
-            file = new File(context.getFilesDir(), fileName.getText().toString());
-        } else {
-            file = new File(context.getCacheDir(), fileName.getText().toString());
-        }
+        File file = new File(isPersistent ? context.getFilesDir() : context.getCacheDir(), fileName.getText().toString());
 
         if (!file.exists()) {
             try {
                 file.createNewFile();
+                fileNames.add(fileName.getText().toString());
+                limitFileCount(context, isPersistent);
+                updateFileListDisplay();
                 Toast.makeText(context, String.format("File %s has been created", fileName.getText().toString()), Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
                 Toast.makeText(context, String.format("File %s creation failed", fileName.getText().toString()), Toast.LENGTH_SHORT).show();
@@ -147,6 +114,7 @@ public class Archi1baldFragment extends Fragment {
                 fileOutputStream = new FileOutputStream(file);
             }
             fileOutputStream.write(fileContents.getText().toString().getBytes(Charset.forName("UTF-8")));
+            fileContents.setText("");  // Clear the EditText field after writing
             Toast.makeText(context, String.format("Write to %s successful", fileName.getText().toString()), Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
@@ -164,13 +132,11 @@ public class Archi1baldFragment extends Fragment {
                 fileInputStream = new FileInputStream(file);
             }
 
-            InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, Charset.forName("UTF-8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, Charset.forName("UTF-8")));
             List<String> lines = new ArrayList<>();
-            BufferedReader reader = new BufferedReader(inputStreamReader);
-            String line = reader.readLine();
-            while (line != null) {
+            String line;
+            while ((line = reader.readLine()) != null) {
                 lines.add(line);
-                line = reader.readLine();
             }
             fileContents.setText(TextUtils.join("\n", lines));
             Toast.makeText(context, String.format("Read from file %s successful", fileName.getText().toString()), Toast.LENGTH_SHORT).show();
@@ -178,19 +144,15 @@ public class Archi1baldFragment extends Fragment {
             e.printStackTrace();
             Toast.makeText(context, String.format("Read from file %s failed", fileName.getText().toString()), Toast.LENGTH_SHORT).show();
             fileContents.setText("");
-
         }
     }
 
     private void deleteFile(Context context, boolean isPersistent) {
-        File file;
-        if (isPersistent) {
-            file = new File(context.getFilesDir(), fileName.getText().toString());
-        } else {
-            file = new File(context.getCacheDir(), fileName.getText().toString());
-        }
+        File file = new File(isPersistent ? context.getFilesDir() : context.getCacheDir(), fileName.getText().toString());
         if (file.exists()) {
             file.delete();
+            fileNames.remove(fileName.getText().toString());
+            updateFileListDisplay();
             Toast.makeText(context, String.format("File %s has been deleted", fileName.getText().toString()), Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(context, String.format("File %s doesn't exist", fileName.getText().toString()), Toast.LENGTH_SHORT).show();
@@ -214,4 +176,8 @@ public class Archi1baldFragment extends Fragment {
         }
     }
 
+    private void loadFileNames() {
+        // This method should load the existing file names from persistent storage when the fragment is created.
+        // You need to implement this based on your app's specific requirements.
+    }
 }

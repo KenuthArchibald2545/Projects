@@ -97,4 +97,15 @@
 
     </LinearLayout>
 
+    <!-- TextView for displaying the file names -->
+    <TextView
+        android:id="@+id/file_list_textview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="20sp"
+        android:textStyle="bold|italic"
+        android:textColor="@color/red"
+        android:padding="8dp" />
+
 </LinearLayout>
